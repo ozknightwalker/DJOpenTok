@@ -1,0 +1,25 @@
+upstream web {
+  ip_hash;
+  server web:${WEB_SERVER_PORT};
+}
+
+server {
+    listen ${NGINX_SERVER_PORT};
+    access_log  /var/log/nginx/djopentok.log;
+    error_log  /var/log/nginx/djopentok.log;
+    gzip on;
+    gzip_disable "msie6";
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_types text/plain image/jpeg image/png text/css image/gif text/javascript application/javascript;
+
+    location /static/ {
+        autoindex on;
+        alias /code/storage/static/;
+        add_header 'Access-Control-Allow-Origin' '*';
+    }
+
+    location / {
+        proxy_pass http://web/;
+    }
+}
