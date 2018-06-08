@@ -1,0 +1,28 @@
+version: '2'
+
+services:
+  web:
+    restart: always
+    build: ./web
+    image: djopentok_web:latest
+    env_file:
+      - .env
+    volumes:
+      - /code/storage
+    expose:
+      - "${WEB_SERVER_PORT}"
+
+  nginx:
+    restart: always
+    build: ./nginx
+    image: djopentok_nginx:latest
+    env_file:
+      - .env
+    ports:
+      - "${NGINX_SERVER_PORT}:${NGINX_SERVER_PORT}"
+    volumes:
+    - /www/static
+    volumes_from:
+      - web
+    links:
+      - web
