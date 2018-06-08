@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 import json
+from opentok import OpenTok
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -42,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework',
 
     'userprofile.apps.UserprofileConfig',
+    'room.apps.RoomConfig',
 ]
 
 MIDDLEWARE = [
@@ -133,3 +135,11 @@ REST_FRAMEWORK = {
 STATIC_URL = '/static/'
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'storage/static')
+
+OPENTOK_API_KEY = os.environ.get('OPENTOK_API_KEY', '46110472')
+OPENTOK_API_SECRET = os.environ.get('OPENTOK_API_SECRET', '8d90efd83deaa06e1ac35d41a0b2b4498eda8e1d')
+
+if OPENTOK_API_KEY == '' or OPENTOK_API_SECRET == '':
+    raise Exception('OPENTOK API CREDENTIAL MISSING')
+
+OPENTOK_APP = OpenTok(OPENTOK_API_KEY, OPENTOK_API_SECRET)
