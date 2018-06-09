@@ -1,0 +1,192 @@
+{% extends 'room/base.html' %}
+
+{% block title %}{{ title|default:'Room' }}{% endblock %}
+
+{% block content %}
+<div class="starter-template">
+    <h1>{{ title|default:'No Room Title' }}</h1>
+    <div class="row">
+      <div class="host-video-container col" id="publisher"></div>
+    </div>
+</div>
+<div class="row">
+  <div class="col"  id="subscribers"></div>
+</div>
+<div class="row">
+  <div class="col">
+    <button type="button" class="btn btn-success" name="button" onclick="capture_image()">image</button>
+    <input type="text" name="" value="" id="status" value="">
+    <textarea name="name" rows="8" cols="80" id="chatBox" onfocus="setFocus()" onblur="unsetFocus()"></textarea>
+  </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script src="https://static.opentok.com/v2/js/opentok.min.js"></script>
+<script>
+    var sessionId = "{{ OPENTOK.session_id }}";
+    var apiKey = "{{ OPENTOK.api_key }}";
+    var token = "{{ OPENTOK.token }}";
+</script>
+<script type="text/javascript">
+var session = OT.initSession(apiKey, sessionId),
+    publisher = null,
+    archiveID = null,
+    connected = false,
+    me = false,
+    publisherInitialized = false;
+
+publisher = OT.initPublisher('publisher', {mirror: false, resolution: '320x240'}, (error) => {
+  publisherInitialized = !error;
+  if (!error) {
+    publish();
+  }
+});
+
+function capture_image(e) {
+  if (!connected || !publisherInitialized) {
+    return;
+  }
+  var imgData = publisher.getImgData();
+
+   var img = document.createElement("img");
+   img.setAttribute("src", "data:image/png;base64," + imgData);
+   var imgWin = window.open("about:blank", "Screenshot");
+   imgWin.document.write("<body></body>");
+   imgWin.document.body.appendChild(img);
+};
+
+function unsetFocus(e) {
+  if (me === true) {
+    me != me;
+  }
+  session.signal(
+    {
+      type:"end-typing"
+    },
+    function(error) {
+      if (error) {
+        console.log("signal error ("
+                     + error.name
+                     + "): " + error.message);
+      } else {
+        console.log("signal sent.");
+      }
+    }
+  );
+};
+
+function setFocus(e) {
+  if (!connected) {
+    return;
+  }
+  me = true;
+  session.signal(
+    {
+      type:"typing"
+    },
+    function(error) {
+      if (error) {
+        console.log("signal error ("
+                     + error.name
+                     + "): " + error.message);
+      } else {
+        console.log("signal sent.");
+      }
+    }
+  );
+};
+
+session.connect(token, (error) => {
+  connected = !error;
+  if (!error) {
+    publish();
+    return;
+  }
+  console.error('Failed to connect', error);
+});
+
+function publish() {
+  if (!connected || !publisherInitialized) {
+    return;
+  }
+  session.publish(publisher);
+};
+
+session.on({
+  signal: (event) => {
+    if (event.type !== 'signal:typing' && event.type !== 'signal:end-typing') {
+      return;
+    }
+    if (me) {
+      return;
+    }
+    var element = document.getElementById('status');
+    element.value = event.type !== 'signal:typing' ? '' : 'typing';
+  },
+  streamCreated: (event) => {
+    session.subscribe(event.stream, 'subscribers', {
+      insertMode: 'append'
+    }, function(error) {
+      if (error) {
+        console.error('Failed to subscribe', error);
+      }
+    });
+  },
+  archiveStarted: (event) => {
+    archiveID = event.id;
+    console.log('ARCHIVE START');
+  },
+  archiveStopped: (event) => {
+    archiveID = null;
+    console.log('ARCHIVE END');
+  },
+})
+
+// session.on('streamCreated', function(event) {
+//   session.subscribe(event.stream, 'subscribers', {
+//     insertMode: 'append'
+//   }, function(error) {
+//     if (error) {
+//       console.error('Failed to subscribe', error);
+//     }
+//   });
+// });
+
+// session.on('archiveStarted', function(event) {
+//   archiveID = event.id;
+//   console.log('ARCHIVE STARTED');
+//   $('.start').hide();
+//   $('.stop').show();
+//   // disableForm();
+// });
+//
+// session.on('archiveStopped', function(event) {
+//   archiveID = null;
+//   console.log('ARCHIVE STOPPED');
+//   $('.start').show();
+//   $('.stop').hide();
+//   // enableForm();
+// });
+
+// $(document).ready(function() {
+//   $('.start').click(function (event) {
+//     var options = $('.archive-options').serialize();
+//     disableForm();
+//     $.post('/start', options).fail(enableForm);
+//   }).show();
+//   $('.stop').click(function(event){
+//     $.get('stop/' + archiveID);
+//   }).hide();
+// });
+//
+//
+// function disableForm() {
+//   $('.archive-options-fields').attr('disabled', 'disabled');
+// }
+//
+// function enableForm() {
+//   $('.archive-options-fields').removeAttr('disabled');
+// }
+</script>
+{% endblock %}

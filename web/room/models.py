@@ -10,11 +10,7 @@ class Room(models.Model):
     title = models.CharField(max_length=255, blank=True)
     when = models.DateTimeField(auto_now_add=True)
 
-    def save(self, commit=True):
-        instance = super().save(commit=False)
+    def save(self, *args, **kwargs):
         if not self.pk:
-            self.session_id = create_session()
-
-        if commit:
-            instance.save()
-        return instance
+            self.session_id = create_session().session_id
+        return super().save(*args, **kwargs)
